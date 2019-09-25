@@ -26,12 +26,19 @@ class Predictor:
 
         self.timer = Timer()
 
-    def predict(self, image, top_k=-1, prob_threshold=None):
+    def predict(self, image, batch_size=1, top_k=-1, prob_threshold=None):
         cpu_device = torch.device("cpu")
         height, width, _ = image.shape
         image = self.transform(image)
         images = image.unsqueeze(0)
         images = images.to(self.device)
+        # add codes
+        tmp_images = images.clone()
+        for i in range(batch_size - 1):
+            images = torch.cat((images, tmp_images), 0)
+        # end add codes
+        # print(images.size())
+
         with torch.no_grad():
             self.timer.start()
             scores, boxes = self.net.forward(images)

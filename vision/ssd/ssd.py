@@ -3,10 +3,25 @@ import torch
 import numpy as np
 from typing import List, Tuple
 import torch.nn.functional as F
+import time
 
 from ..utils import box_utils
 from collections import namedtuple
 GraphPath = namedtuple("GraphPath", ['s0', 'name', 's1'])  #
+
+
+def file_open():
+    output_f = open('/home/jian/workspace_cx/pytorch_test/batch_test.txt', 'a')
+    return output_f
+
+
+def file_write(output_f, content):
+    output_f.write(content + '\n')
+
+
+def file_close(output_f):
+    output_f.flush()
+    output_f.close()
 
 
 class SSD(nn.Module):
@@ -29,10 +44,15 @@ class SSD(nn.Module):
         # register layers in source_layer_indexes by adding them to a module list
         self.source_layer_add_ons = nn.ModuleList([t[1] for t in source_layer_indexes
                                                    if isinstance(t, tuple) and not isinstance(t, GraphPath)])
+        # print('source_layer_add_ons: \n' + str(self.source_layer_add_ons))
         if device:
             self.device = device
         else:
-            self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+            # self.device = torch.cuda.current_device()
+            self.device = torch.device("cuda:2" if torch.cuda.is_available() else "cpu")
+        self.device = torch.cuda.current_device()
+        # print(self.device)
+        # self.device = torch.device("cpu")
         if is_test:
             self.config = config
             self.priors = config.priors.to(self.device)
@@ -54,35 +74,83 @@ class SSD(nn.Module):
             else:
                 added_layer = None
                 path = None
+            
+            output_f = file_open()
             for layer in self.base_net[start_layer_index: end_layer_index]:
+                # print(x.size())
+                torch.cuda.synchronize()
+                t0 = time.time()
                 x = layer(x)
+                torch.cuda.synchronize()
+                t1 = time.time()
+                # print(str(layer))
+                # print(str(layer) + ': ' + str(t1 - t0))
+                file_write(output_f, str(t1 - t0))
+            file_close(output_f)
+
             if added_layer:
                 y = added_layer(x)
             else:
                 y = x
             if path:
                 sub = getattr(self.base_net[end_layer_index], path.name)
+                output_f = file_open()
                 for layer in sub[:path.s1]:
+                    # print(x.size())
+                    torch.cuda.synchronize()
+                    t0 = time.time()
                     x = layer(x)
+                    torch.cuda.synchronize()
+                    t1 = time.time()
+                    # print(str(layer))
+                    # print(str(layer) + ': ' + str(t1 - t0))
+                    file_write(output_f, str(t1 - t0))
                 y = x
                 for layer in sub[path.s1:]:
+                    # print(x.size())
+                    torch.cuda.synchronize()
+                    t0 = time.time()
                     x = layer(x)
+                    torch.cuda.synchronize()
+                    t1 = time.time()
+                    # print(str(layer))
+                    # print(str(layer) + ': ' + str(t1 - t0))
+                    file_write(output_f, str(t1 - t0))
+                file_close(output_f)
+
                 end_layer_index += 1
             start_layer_index = end_layer_index
             confidence, location = self.compute_header(header_index, y)
             header_index += 1
             confidences.append(confidence)
             locations.append(location)
-
+        
+        output_f = file_open()
         for layer in self.base_net[end_layer_index:]:
+            # print(x.size())
+            torch.cuda.synchronize()
+            t0 = time.time()
             x = layer(x)
-
+            torch.cuda.synchronize()
+            t1 = time.time()
+            # print(str(layer))
+            # print(str(layer) + ': ' + str(t1 - t0))
+            file_write(output_f, str(t1 - t0))
+        file_close(output_f)
+        
+        # tmp_file = open('/home/jian/workspace_cx/pytorch_test/tmp_info.txt', 'w')
+        # tmp_file.write('Start ModuleList\n')
+        # tmp_file.flush()
+        # tmp_file.close()
         for layer in self.extras:
             x = layer(x)
+            # print(str(layer))
             confidence, location = self.compute_header(header_index, x)
+            # print('between')
             header_index += 1
             confidences.append(confidence)
             locations.append(location)
+        # print('len of conf: ' + str(len(confidences)))
 
         confidences = torch.cat(confidences, 1)
         locations = torch.cat(locations, 1)
@@ -98,6 +166,11 @@ class SSD(nn.Module):
             return confidences, locations
 
     def compute_header(self, i, x):
+        tmp_file = open('/home/jian/workspace_cx/pytorch_test/tmp_info.txt', 'w')
+        tmp_file.write('Start ModuleList\n')
+        tmp_file.flush()
+        tmp_file.close()
+
         confidence = self.classification_headers[i](x)
         confidence = confidence.permute(0, 2, 3, 1).contiguous()
         confidence = confidence.view(confidence.size(0), -1, self.num_classes)
@@ -105,6 +178,10 @@ class SSD(nn.Module):
         location = self.regression_headers[i](x)
         location = location.permute(0, 2, 3, 1).contiguous()
         location = location.view(location.size(0), -1, 4)
+
+        tmp_file = open('/home/jian/workspace_cx/pytorch_test/tmp_info.txt', 'w')
+        tmp_file.flush()
+        tmp_file.close()
 
         return confidence, location
 
