@@ -18,6 +18,7 @@ from torch.utils.data import DataLoader
 from torchvision import models
 
 loop_num = 30
+# add
 
 # print(torch.cuda.current_device())
 
