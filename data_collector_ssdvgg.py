@@ -19,7 +19,7 @@ from torchvision import models
 
 loop_num = 30
 # add
-test1 = 1
+test = 1
 
 # print(torch.cuda.current_device())
 
