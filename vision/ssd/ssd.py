@@ -11,7 +11,7 @@ GraphPath = namedtuple("GraphPath", ['s0', 'name', 's1'])  #
 
 
 def file_open():
-    output_f = open('/home/jian/workspace_cx/pytorch_test/batch_test.txt', 'a')
+    output_f = open('/home/jian/Documents/adaptive_batching/yolo-9000/darknet/pytorch_test/batch_test.txt', 'a')
     return output_f
 
 
@@ -76,6 +76,7 @@ class SSD(nn.Module):
                 path = None
             
             output_f = file_open()
+            print('strat_layer:' + str(start_layer_index) + ',' + str(end_layer_index))
             for layer in self.base_net[start_layer_index: end_layer_index]:
                 # print(x.size())
                 torch.cuda.synchronize()
@@ -84,7 +85,8 @@ class SSD(nn.Module):
                 torch.cuda.synchronize()
                 t1 = time.time()
                 # print(str(layer))
-                # print(str(layer) + ': ' + str(t1 - t0))
+                print(str(layer) + ': ' + str(t1 - t0))
+                print(x[0][0][0])
                 file_write(output_f, str(t1 - t0))
             file_close(output_f)
 
@@ -103,7 +105,8 @@ class SSD(nn.Module):
                     torch.cuda.synchronize()
                     t1 = time.time()
                     # print(str(layer))
-                    # print(str(layer) + ': ' + str(t1 - t0))
+                    print(str(layer) + ': ' + str(t1 - t0))
+                    print(x[0][0][0])
                     file_write(output_f, str(t1 - t0))
                 y = x
                 for layer in sub[path.s1:]:
@@ -114,7 +117,8 @@ class SSD(nn.Module):
                     torch.cuda.synchronize()
                     t1 = time.time()
                     # print(str(layer))
-                    # print(str(layer) + ': ' + str(t1 - t0))
+                    print(str(layer) + ': ' + str(t1 - t0))
+                    print(x[0][0][0])
                     file_write(output_f, str(t1 - t0))
                 file_close(output_f)
 
@@ -134,7 +138,8 @@ class SSD(nn.Module):
             torch.cuda.synchronize()
             t1 = time.time()
             # print(str(layer))
-            # print(str(layer) + ': ' + str(t1 - t0))
+            print(str(layer) + ': ' + str(t1 - t0))
+            print(x[0][0][0])
             file_write(output_f, str(t1 - t0))
         file_close(output_f)
         
@@ -144,7 +149,7 @@ class SSD(nn.Module):
         # tmp_file.close()
         for layer in self.extras:
             x = layer(x)
-            # print(str(layer))
+            print(str(layer))
             confidence, location = self.compute_header(header_index, x)
             # print('between')
             header_index += 1
@@ -155,18 +160,19 @@ class SSD(nn.Module):
         confidences = torch.cat(confidences, 1)
         locations = torch.cat(locations, 1)
         
-        if self.is_test:
-            confidences = F.softmax(confidences, dim=2)
-            boxes = box_utils.convert_locations_to_boxes(
-                locations, self.priors, self.config.center_variance, self.config.size_variance
-            )
-            boxes = box_utils.center_form_to_corner_form(boxes)
-            return confidences, boxes
-        else:
-            return confidences, locations
+        # if self.is_test:
+        #     confidences = F.softmax(confidences, dim=2)
+        #     boxes = box_utils.convert_locations_to_boxes(
+        #         locations, self.priors, self.config.center_variance, self.config.size_variance
+        #     )
+        #     boxes = box_utils.center_form_to_corner_form(boxes)
+        #     return confidences, boxes
+        # else:
+        #     return confidences, locations
+        return confidences, locations
 
     def compute_header(self, i, x):
-        tmp_file = open('/home/jian/workspace_cx/pytorch_test/tmp_info.txt', 'w')
+        tmp_file = open('../../../tmp_info.txt', 'w')
         tmp_file.write('Start ModuleList\n')
         tmp_file.flush()
         tmp_file.close()
@@ -179,7 +185,7 @@ class SSD(nn.Module):
         location = location.permute(0, 2, 3, 1).contiguous()
         location = location.view(location.size(0), -1, 4)
 
-        tmp_file = open('/home/jian/workspace_cx/pytorch_test/tmp_info.txt', 'w')
+        tmp_file = open('../../../tmp_info.txt', 'w')
         tmp_file.flush()
         tmp_file.close()
 

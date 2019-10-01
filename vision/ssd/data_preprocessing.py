@@ -54,9 +54,12 @@ class PredictionTransform:
             Resize(size),
             SubtractMeans(mean),
             lambda img, boxes=None, labels=None: (img / std, boxes, labels),
-            ToTensor()
+            ToTensor(),
         ])
+        print('in ini pred trans')
 
     def __call__(self, image):
         image, _, _ = self.transform(image)
+        print('in Prediction Transform')
+        print(type(image))
         return image

@@ -32,13 +32,13 @@ def create_vgg_ssd(num_classes, is_test=False):
         Sequential(
             Conv2d(in_channels=256, out_channels=128, kernel_size=1),
             ReLU(),
-            Conv2d(in_channels=128, out_channels=256, kernel_size=3),
+            Conv2d(in_channels=128, out_channels=256, kernel_size=3, padding=1),
             ReLU()
         ),
         Sequential(
             Conv2d(in_channels=256, out_channels=128, kernel_size=1),
             ReLU(),
-            Conv2d(in_channels=128, out_channels=256, kernel_size=3),
+            Conv2d(in_channels=128, out_channels=256, kernel_size=3, padding=1),
             ReLU()
         )
     ])

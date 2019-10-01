@@ -9,6 +9,7 @@ class Predictor:
     def __init__(self, net, size, mean=0.0, std=1.0, nms_method=None,
                  iou_threshold=0.45, filter_threshold=0.01, candidate_size=200, sigma=0.5, device=None):
         self.net = net
+        print(size, mean, std)
         self.transform = PredictionTransform(size, mean, std)
         self.iou_threshold = iou_threshold
         self.filter_threshold = filter_threshold
@@ -29,9 +30,16 @@ class Predictor:
     def predict(self, image, batch_size=1, top_k=-1, prob_threshold=None):
         cpu_device = torch.device("cpu")
         height, width, _ = image.shape
+        # print(image.shape)
+        # print(type(image))
+        # print(self.transform)
         image = self.transform(image)
+        # print(type(image))
         images = image.unsqueeze(0)
         images = images.to(self.device)
+        print('------------------------images in ssd pred-------------------------')
+        print(images.size())
+        print(images[0][0][0])
         # add codes
         tmp_images = images.clone()
         for i in range(batch_size - 1):
